@@ -1,0 +1,36 @@
+# Secrets and Credentials
+.env
+.env.local
+.env.*.local
+*.pem
+*.key
+
+# Supabase Local Development
+supabase/.temp/
+supabase/.secrets/
+supabase/.state/
+supabase/functions/.import_map.json
+
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# OS specific files
+.DS_Store
+Thumbs.db
+desktop.ini
+~$*
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Text Editor / IDE configurations
+.vscode/
+.idea/
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
