@@ -11,6 +11,10 @@ supabase/.secrets/
 supabase/.state/
 supabase/functions/.import_map.json
 
+# Next.js
+.next/
+out/
+
 # Dependencies
 node_modules/
 .pnpm-store/

@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My_Fix — Lagos Home Services Portal & Simulator</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap" rel="stylesheet">
+    <!-- FontAwesome for Premium Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <!-- App Container -->
+    <div class="app-container">
+        
+        <!-- Header -->
+        <header class="main-header glass">
+            <div class="header-brand">
+                <div class="brand-logo">
+                    <!-- Custom Embedded SVG Logo to match brand guidelines -->
+                    <svg viewBox="0 0 120 120" width="40" height="40" class="logo-svg">
+                        <rect x="0" y="0" width="120" height="120" rx="28" fill="#1A6B3A"/>
+                        <polygon points="60,14 102,44 102,96 18,96 18,44" fill="none" stroke="#ffffff" stroke-width="5" stroke-linejoin="round"/>
+                        <polygon points="60,14 102,44 60,44" fill="#D4A017"/>
+                        <rect x="46" y="66" width="28" height="30" rx="3" fill="#ffffff"/>
+                        <rect x="52" y="72" width="8" height="10" rx="2" fill="#1A6B3A"/>
+                        <rect x="64" y="72" width="8" height="10" rx="2" fill="#1A6B3A"/>
+                        <g transform="translate(88, 76)">
+                            <rect x="0" y="0" width="34" height="8" rx="4" fill="#D4A017" transform="rotate(-45)"/>
+                        </g>
+                    </svg>
+                </div>
+                <div class="brand-text">
+                    <h1>My<span>_Fix</span></h1>
+                    <p class="tagline">YOUR TRUSTED HOME FIX</p>
+                </div>
+            </div>
+            
+            <nav class="nav-links">
+                <button class="nav-btn active" data-tab="discovery"><i class="fa-solid fa-map-location-dot"></i> Discovery Portal</button>
+                <button class="nav-btn" data-tab="onboarding"><i class="fa-solid fa-user-shield"></i> Onboarding Simulator</button>
+                <button class="nav-btn" data-tab="escrow"><i class="fa-solid fa-wallet"></i> Escrow Engine</button>
+                <button class="nav-btn" data-tab="supabase"><i class="fa-solid fa-database"></i> Supabase Monitor</button>
+            </nav>
+
+            <div class="header-actions">
+                <button id="theme-toggle-btn" class="icon-btn" title="Toggle Light/Dark Theme">
+                    <i class="fa-solid fa-sun sun-icon"></i>
+                    <i class="fa-solid fa-moon moon-icon"></i>
+                </button>
+                <div class="live-status-pill green-glow">
+                    <span class="pulse-dot"></span>
+                    <span class="status-label">Lagos Region (Active)</span>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Layout -->
+        <main class="main-content">
+            
+            <!-- Sidebar: Proximity Coordinates and Connection settings -->
+            <aside class="dashboard-sidebar glass">
+                <div class="sidebar-section">
+                    <h3><i class="fa-solid fa-compass"></i> Client Context</h3>
+                    <p class="section-desc">Simulate a Lagos client requesting home services.</p>
+                    
+                    <div class="input-group">
+                        <label for="client-neighborhood">Client Location</label>
+                        <select id="client-neighborhood" class="form-input">
+                            <option value="lekki" data-lat="6.4281" data-lng="3.4219" selected>Lekki Phase 1</option>
+                            <option value="surulere" data-lat="6.5058" data-lng="3.3614">Surulere</option>
+                            <option value="ikeja" data-lat="6.5920" data-lng="3.3422">Ikeja GRA</option>
+                            <option value="yaba" data-lat="6.5095" data-lng="3.3711">Yaba</option>
+                            <option value="vi" data-lat="6.4278" data-lng="3.4248">Victoria Island</option>
+                        </select>
+                    </div>
+
+                    <div class="coords-display">
+                        <div class="coord-item">
+                            <span class="coord-label">Latitude</span>
+                            <span class="coord-val" id="display-lat">6.4281</span>
+                        </div>
+                        <div class="coord-item">
+                            <span class="coord-label">Longitude</span>
+                            <span class="coord-val" id="display-lng">3.4219</span>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sidebar-section">
+                    <h3><i class="fa-solid fa-sliders"></i> Active Filters</h3>
+                    
+                    <div class="input-group">
+                        <label for="filter-trade">Artisan Trade</label>
+                        <select id="filter-trade" class="form-input">
+                            <option value="all">All Trades</option>
+                            <option value="Plumber">Plumbing</option>
+                            <option value="Electrician">Electrical</option>
+                            <option value="AC Repair">AC Installation & Repair</option>
+                            <option value="Generator Repair">Generator Services</option>
+                            <option value="Tailor">Tailoring</option>
+                        </select>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="filter-badge">Min Verification Badge</label>
+                        <div class="badge-select-group">
+                            <button class="badge-btn active" data-badge="bronze">
+                                <i class="fa-solid fa-award bronze-text"></i> Bronze
+                            </button>
+                            <button class="badge-btn" data-badge="silver">
+                                <i class="fa-solid fa-award silver-text"></i> Silver
+                            </button>
+                            <button class="badge-btn" data-badge="gold">
+                                <i class="fa-solid fa-award gold-text"></i> Gold
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="sidebar-section stats-summary">
+                    <h3><i class="fa-solid fa-chart-simple"></i> Platform Activity</h3>
+                    <div class="stat-row">
+                        <span class="stat-label">Verified Artisans</span>
+                        <span class="stat-number text-green" id="stat-artisans-count">12</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Active Escrow Bookings</span>
+                        <span class="stat-number text-gold" id="stat-escrow-count">₦0.00</span>
+                    </div>
+                    <div class="stat-row">
+                        <span class="stat-label">Disputed Bookings</span>
+                        <span class="stat-number text-red">0</span>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Main Tab Views -->
+            <section class="tab-panels">
+                
+                <!-- Tab 1: Discovery Portal -->
+                <div id="tab-discovery" class="tab-panel active">
+                    <div class="panel-header">
+                        <h2>Lagos Proximity Discovery Portal</h2>
+                        <p class="panel-desc">Real-time distance proximity matching using our active Supabase PostGIS function.</p>
+                    </div>
+
+                    <div class="artisans-grid" id="artisans-list-container">
+                        <!-- Artisans Cards will be dynamically rendered here -->
+                    </div>
+                </div>
+
+                <!-- Tab 2: Onboarding Simulator -->
+                <div id="tab-onboarding" class="tab-panel">
+                    <div class="panel-header">
+                        <h2>Artisan Onboarding & ID Verification</h2>
+                        <p class="panel-desc">Simulate how artisans (like Emeka) complete Nigeria KYC verification (NIN & BVN matching) to achieve tiered badges.</p>
+                    </div>
+
+                    <div class="onboarding-simulator-container glass">
+                        <div class="simulator-steps">
+                            <div class="step-indicator active" id="ind-step-1">
+                                <div class="step-num">1</div>
+                                <span class="step-title">Phone & OTP</span>
+                            </div>
+                            <div class="step-indicator" id="ind-step-2">
+                                <div class="step-num">2</div>
+                                <span class="step-title">NIN Submission</span>
+                            </div>
+                            <div class="step-indicator" id="ind-step-3">
+                                <div class="step-num">3</div>
+                                <span class="step-title">BVN Verification</span>
+                            </div>
+                            <div class="step-indicator" id="ind-step-4">
+                                <div class="step-num">4</div>
+                                <span class="step-title">Badge Issued</span>
+                            </div>
+                        </div>
+
+                        <div class="simulator-card-content">
+                            <!-- Step 1 View: Phone OTP -->
+                            <div class="sim-step-view active" id="step-view-1">
+                                <h3><i class="fa-solid fa-phone"></i> Step 1: Telephone OTP Authentication</h3>
+                                <p>To protect Lagos homeowners, every artisan registration starts with verifying a valid Nigerian mobile phone number.</p>
+                                
+                                <div class="sim-input-box">
+                                    <label>Enter Phone Number</label>
+                                    <div class="input-with-prefix">
+                                        <span class="input-prefix">+234</span>
+                                        <input type="tel" id="sim-phone" class="form-input" placeholder="803 123 4567" value="8145558839">
+                                    </div>
+                                </div>
+                                <button class="btn btn-primary" id="btn-send-otp">Send Verification OTP Code</button>
+                                
+                                <div class="otp-verification-box hidden" id="otp-input-area">
+                                    <p class="otp-desc"><i class="fa-solid fa-comment-sms"></i> OTP SMS Sent to +234 814 555 8839 via Termii API</p>
+                                    <div class="otp-input-grid">
+                                        <input type="text" maxlength="1" class="otp-digit" value="7">
+                                        <input type="text" maxlength="1" class="otp-digit" value="4">
+                                        <input type="text" maxlength="1" class="otp-digit" value="1">
+                                        <input type="text" maxlength="1" class="otp-digit" value="0">
+                                    </div>
+                                    <button class="btn btn-success" id="btn-verify-otp">Verify Code</button>
+                                </div>
+                            </div>
+
+                            <!-- Step 2 View: NIN Submission & Face Matching -->
+                            <div class="sim-step-view" id="step-view-2">
+                                <h3><i class="fa-solid fa-id-card"></i> Step 2: National Identification Number (NIMC API)</h3>
+                                <p>Provide details exactly as registered with the National Identity Management Commission (NIMC) for face matching.</p>
+                                
+                                <!-- Alert: Toggle API Downtime -->
+                                <div class="alert warning-alert">
+                                    <div class="alert-icon"><i class="fa-solid fa-triangle-exclamation"></i></div>
+                                    <div class="alert-body">
+                                        <h4>NIMC API Downtime Fallback Toggle</h4>
+                                        <p>NIMC API endpoints occasionally suffer connectivity drops. Toggle this simulation mode to test the <strong>Manual Backoffice Admin Verification</strong> fallback queue!</p>
+                                        <div class="toggle-container">
+                                            <span class="toggle-label">Simulate NIMC API Offline</span>
+                                            <label class="switch">
+                                                <input type="checkbox" id="toggle-nimc-offline">
+                                                <span class="slider round"></span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div class="onboarding-split">
+                                    <div class="onboarding-form-fields">
+                                        <div class="input-group">
+                                            <label for="sim-nin">NIN (11 Digits)</label>
+                                            <input type="text" id="sim-nin" class="form-input" placeholder="e.g. 12345678901" value="48293021948">
+                                        </div>
+                                        <div class="input-group">
+                                            <label for="sim-fullname">Full Name (Matches ID)</label>
+                                            <input type="text" id="sim-fullname" class="form-input" placeholder="Surname First Name" value="Emeka Anthony Nwosu">
+                                        </div>
+                                        <button class="btn btn-primary" id="btn-submit-nin">Process NIN & Live Selfie</button>
+                                    </div>
+
+                                    <div class="selfie-card">
+                                        <div class="selfie-viewport" id="selfie-capture-box">
+                                            <i class="fa-solid fa-user-astronaut placeholder-astronaut"></i>
+                                            <span class="selfie-label">Click 'Process NIN' to run Face Match</span>
+                                        </div>
+                                        <div class="selfie-match-result hidden" id="selfie-match-badge">
+                                            <i class="fa-solid fa-circle-check text-green"></i> 98.4% Match Accuracy
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Step 3 View: BVN Verification -->
+                            <div class="sim-step-view" id="step-view-3">
+                                <h3><i class="fa-solid fa-building-columns"></i> Step 3: BVN Financial Identity Cross-Check</h3>
+                                <p>We crosscheck your Bank Verification Number (BVN) to ensure payout bank details match your NIMC identity, preventing fraudulent collections.</p>
+                                
+                                <div class="input-group">
+                                    <label for="sim-bvn">BVN Number</label>
+                                    <input type="text" id="sim-bvn" class="form-input" placeholder="e.g. 22233344455" value="22240958302">
+                                </div>
+
+                                <div class="input-group">
+                                    <label for="sim-bank">Payout Bank Account</label>
+                                    <select id="sim-bank" class="form-input">
+                                        <option value="058">GTBank (Guaranty Trust)</option>
+                                        <option value="011">First Bank of Nigeria</option>
+                                        <option value="044">Access Bank</option>
+                                        <option value="070">Fidelity Bank</option>
+                                    </select>
+                                </div>
+
+                                <div class="input-group">
+                                    <label for="sim-account">Account Number</label>
+                                    <input type="text" id="sim-account" class="form-input" placeholder="10 Digits" value="3049583029">
+                                </div>
+
+                                <button class="btn btn-primary" id="btn-submit-bvn">Verify Payout Credentials</button>
+                            </div>
+
+                            <!-- Step 4 View: Completion -->
+                            <div class="sim-step-view text-center" id="step-view-4">
+                                <div class="celebration-badge-container">
+                                    <i class="fa-solid fa-medal celebration-medal text-gold"></i>
+                                </div>
+                                <h2 class="text-gold">Artisan Verified Successfully!</h2>
+                                <p class="success-desc">Congratulations! Emeka's identity and BVN matches have been successfully locked in our Supabase records.</p>
+                                
+                                <div class="badge-results-card glass">
+                                    <div class="badge-result-row">
+                                        <span>Verification Status</span>
+                                        <span class="status-badge green-bg">ACTIVE_VERIFIED</span>
+                                    </div>
+                                    <div class="badge-result-row">
+                                        <span>Tier Level Issued</span>
+                                        <span class="badge-tag gold-badge"><i class="fa-solid fa-award"></i> Gold Professional</span>
+                                    </div>
+                                    <div class="badge-result-row">
+                                        <span>NIMC Verification</span>
+                                        <span class="text-green"><i class="fa-solid fa-circle-check"></i> Passed (NIMC API Match)</span>
+                                    </div>
+                                    <div class="badge-result-row">
+                                        <span>BVN Validation</span>
+                                        <span class="text-green"><i class="fa-solid fa-circle-check"></i> Passed (Name matches GTBank)</span>
+                                    </div>
+                                </div>
+
+                                <button class="btn btn-primary" id="btn-reset-onboarding">Reset Onboarding Wizard</button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 3: Escrow & Paystack Simulator -->
+                <div id="tab-escrow" class="tab-panel">
+                    <div class="panel-header">
+                        <h2>Escrow Payment Engine & Paystack Webhook Simulator</h2>
+                        <p class="panel-desc">Initiate a service booking, pay into escrow via Paystack, test security features (price validation exploits), and release payments.</p>
+                    </div>
+
+                    <div class="escrow-split">
+                        <!-- Booking Form & Interactive Flow -->
+                        <div class="escrow-card glass">
+                            <h3><i class="fa-solid fa-file-invoice-dollar"></i> 1. Booking Checkout Summary</h3>
+                            
+                            <div class="booking-summary-fields">
+                                <div class="summary-row">
+                                    <span>Selected Professional</span>
+                                    <strong id="escrow-artisan-name">Emeka Nwosu (Electrician)</strong>
+                                </div>
+                                <div class="summary-row">
+                                    <span>Base Callout Fee</span>
+                                    <strong id="escrow-callout-fee">₦5,000.00</strong>
+                                </div>
+                                <div class="summary-row">
+                                    <span>Estimated Service Fee</span>
+                                    <strong id="escrow-service-fee">₦10,000.00</strong>
+                                </div>
+                                <div class="divider"></div>
+                                <div class="summary-row total-row">
+                                    <span>Total Booking Cost</span>
+                                    <strong id="escrow-total-cost" class="text-green">₦15,000.00</strong>
+                                </div>
+                            </div>
+
+                            <div class="exploit-box">
+                                <h4><i class="fa-solid fa-shield-virus"></i> Price Exploitation Tester (Security Check)</h4>
+                                <p>Simulate a client trying to bypass payment requirements by forcing a mock checkout with a hacked transaction amount.</p>
+                                
+                                <div class="input-group">
+                                    <label for="sim-payment-amount">Simulated Payment Amount (₦)</label>
+                                    <div class="flex-input-row">
+                                        <input type="number" id="sim-payment-amount" class="form-input" value="15000">
+                                        <button class="btn btn-warning" id="btn-force-exploit-price" title="Fill ₦1.00 to attempt exploit">Exploit Amount (₦1.00)</button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <button class="btn btn-success btn-large" id="btn-trigger-checkout"><i class="fa-solid fa-credit-card"></i> Pay Securely with Paystack (Escrow)</button>
+                        </div>
+
+                        <!-- State Machine Visualization -->
+                        <div class="escrow-state-visualizer glass">
+                            <h3><i class="fa-solid fa-circle-nodes"></i> 2. Escrow State Machine</h3>
+                            
+                            <div class="state-nodes-vertical">
+                                <div class="state-node active" id="node-pending">
+                                    <div class="node-icon"><i class="fa-solid fa-clock"></i></div>
+                                    <div class="node-text">
+                                        <h4>Pending Payment</h4>
+                                        <p>Booking registered in database. Awaiting Paystack webhook event.</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="state-node" id="node-paid">
+                                    <div class="node-icon"><i class="fa-solid fa-lock"></i></div>
+                                    <div class="node-text">
+                                        <h4>Escrow Paid & Held</h4>
+                                        <p>₦15,000.00 verified and locked in platform's Escrow account.</p>
+                                    </div>
+                                </div>
+                                
+                                <div class="state-node" id="node-completed">
+                                    <div class="node-icon"><i class="fa-solid fa-check-double"></i></div>
+                                    <div class="node-text">
+                                        <h4>Artisan Logged Completion</h4>
+                                        <p>Emeka completed the repair. Client must confirm or dispute within 24h.</p>
+                                    </div>
+                                </div>
+
+                                <div class="state-node" id="node-released">
+                                    <div class="node-icon"><i class="fa-solid fa-circle-check"></i></div>
+                                    <div class="node-text">
+                                        <h4>Funds Released to Artisan</h4>
+                                        <p>Escrow released. ₦13,500 (90%) paid to GTBank; 10% platform commission retained.</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Interactive Admin / Client controls inside active states -->
+                            <div class="escrow-controls-container hidden" id="escrow-actions-area">
+                                <h4>Escrow Actions Controller</h4>
+                                <div class="escrow-actions-grid">
+                                    <button class="btn btn-primary" id="btn-artisan-complete"><i class="fa-solid fa-hammer"></i> Log Artisan Complete</button>
+                                    <button class="btn btn-success hidden" id="btn-client-confirm-release"><i class="fa-solid fa-circle-check"></i> Client Confirm Release</button>
+                                    <button class="btn btn-danger hidden" id="btn-client-dispute"><i class="fa-solid fa-triangle-exclamation"></i> Open Booking Dispute</button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Custom Visual Log console -->
+                    <div class="log-console-container glass">
+                        <div class="console-header">
+                            <span><i class="fa-solid fa-terminal"></i> Platform Webhook & Database Real-Time Audit Log</span>
+                            <button id="btn-clear-console" class="btn btn-link">Clear Logs</button>
+                        </div>
+                        <div class="console-body" id="console-logs-display">
+                            <div class="log-line text-blue">[SYSTEM] Escrow Webhook Simulator Initialized. Awaiting checkout actions.</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Tab 4: Supabase Connection -->
+                <div id="tab-supabase" class="tab-panel">
+                    <div class="panel-header">
+                        <h2>Supabase Database Connection Sync</h2>
+                        <p class="panel-desc">Direct dashboard sync. View live connection settings and run seeding operations directly into your active PostgreSQL project.</p>
+                    </div>
+
+                    <div class="supabase-config-grid">
+                        <div class="config-card glass">
+                            <h3><i class="fa-solid fa-network-wired"></i> Connection Status</h3>
+                            
+                            <div class="config-row">
+                                <span class="config-label">Supabase URL</span>
+                                <span class="config-value text-blue">https://tarvtukfkytouhyuiamb.supabase.co</span>
+                            </div>
+
+                            <div class="config-row">
+                                <span class="config-label">Project ID</span>
+                                <span class="config-value font-mono">tarvtukfkytouhyuiamb</span>
+                            </div>
+
+                            <div class="config-row">
+                                <span class="config-label">Region</span>
+                                <span class="config-value text-green">US West (Oregon)</span>
+                            </div>
+
+                            <div class="config-row">
+                                <span class="config-label">Schema Status</span>
+                                <span class="config-value text-green"><i class="fa-solid fa-circle-check"></i> v1.1 Migrations Applied</span>
+                            </div>
+
+                            <div class="alert success-alert" style="margin-top: 1.5rem;">
+                                <div class="alert-icon"><i class="fa-solid fa-shield-halved"></i></div>
+                                <div class="alert-body">
+                                    <h4>Row Level Security Note</h4>
+                                    <p>All core tables (Profiles, Artisans, Bookings, Reviews) have RLS fully enabled and secure inside this active project.</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="config-card glass">
+                            <h3><i class="fa-solid fa-database-arrow-up"></i> DB Seeding Operations</h3>
+                            <p>Populate the remote database tables with standard Lagos artisan seed values (GPS postGIS coordinate coordinates, specific service LGAs, call-out rates).</p>
+                            
+                            <div class="seeding-control-box">
+                                <button class="btn btn-primary" id="btn-seed-database"><i class="fa-solid fa-seedling"></i> Run Database Artisan Seed Script</button>
+                                <p class="seeding-indicator text-green hidden" id="seeding-loading-indicator"><span class="pulse-dot"></span> Seeding active Supabase project tables...</p>
+                            </div>
+
+                            <div class="schema-tables-list">
+                                <h4>Detected Schema Tables</h4>
+                                <div class="table-pill-row">
+                                    <div class="table-pill"><span class="text-green"><i class="fa-solid fa-table"></i> public.profiles</span></div>
+                                    <div class="table-pill"><span class="text-green"><i class="fa-solid fa-table"></i> public.artisans</span></div>
+                                    <div class="table-pill"><span class="text-green"><i class="fa-solid fa-table"></i> public.bookings</span></div>
+                                    <div class="table-pill"><span class="text-green"><i class="fa-solid fa-table"></i> public.reviews</span></div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </section>
+        </main>
+    </div>
+
+    <!-- Embedded Paystack Secure Checkout Modal Mock -->
+    <div class="checkout-modal-overlay hidden" id="paystack-modal">
+        <div class="paystack-modal-box">
+            <div class="paystack-header">
+                <div class="paystack-logo">
+                    <span class="paystack-p">p</span>aystack
+                </div>
+                <div class="paystack-amount-box">
+                    <span class="checkout-email">chidinma@myfix.ng</span>
+                    <strong class="checkout-amount" id="paystack-modal-amount">₦15,000.00</strong>
+                </div>
+            </div>
+
+            <div class="paystack-body">
+                <p class="paystack-instructions"><i class="fa-solid fa-shield-halved text-green"></i> Secure Escrow Authorization via Bank Transfer, Card, or USSD.</p>
+                
+                <div class="paystack-card-view">
+                    <div class="input-group">
+                        <label>Card Number</label>
+                        <input type="text" class="form-input font-mono" value="5061 2495 2049 2048" disabled>
+                    </div>
+                    <div class="flex-input-row" style="margin-top: 0.5rem;">
+                        <div class="input-group">
+                            <label>Expiry</label>
+                            <input type="text" class="form-input text-center" value="12/28" disabled>
+                        </div>
+                        <div class="input-group">
+                            <label>CVV</label>
+                            <input type="text" class="form-input text-center" value="482" disabled>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="paystack-actions">
+                    <button class="btn btn-success" id="btn-paystack-success-mock"><i class="fa-solid fa-lock"></i> Authorize Escrow Payment</button>
+                    <button class="btn btn-link" id="btn-paystack-cancel">Cancel Payment</button>
+                </div>
+            </div>
+            <div class="paystack-footer">
+                <p><i class="fa-solid fa-lock text-green"></i> Certified PCI-DSS Level 1 Gateway</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Core App Controller Script -->
+    <script src="app.js"></script>
+</body>
+</html>

@@ -6,9 +6,6 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 
-// Import Node-equivalent crypto libraries in Deno for HMAC hashing
-import { HMAC } from "https://deno.land/x/hmac@v2.0.1/mod.ts";
-
 const PAYSTACK_SECRET_KEY = Deno.env.get("PAYSTACK_SECRET_KEY") ?? "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
@@ -29,10 +26,27 @@ serve(async (req) => {
             return new Response("Missing Signature Header", { status: 400 });
         }
 
-        // 4. Verify HMAC-SHA512 Signature to guarantee this request is genuine
-        const expectedSignature = new HMAC("sha512", PAYSTACK_SECRET_KEY)
-            .update(bodyText)
-            .digest("hex");
+        // 4. Verify HMAC-SHA512 Signature natively using Web Crypto API
+        const keyBuf = new TextEncoder().encode(PAYSTACK_SECRET_KEY);
+        const bodyBuf = new TextEncoder().encode(bodyText);
+
+        const cryptoKey = await crypto.subtle.importKey(
+            "raw",
+            keyBuf,
+            { name: "HMAC", hash: "SHA-512" },
+            false,
+            ["sign"]
+        );
+
+        const signatureBuf = await crypto.subtle.sign(
+            "HMAC",
+            cryptoKey,
+            bodyBuf
+        );
+
+        const expectedSignature = Array.from(new Uint8Array(signatureBuf))
+            .map(b => b.toString(16).padStart(2, "0"))
+            .join("");
 
         if (signature !== expectedSignature) {
             console.error("⚠️ HMAC Signature verification failed!");
@@ -65,8 +79,26 @@ serve(async (req) => {
             // Initialize high-privilege Supabase client (bypasses RLS to update escrow records)
             const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-            // 7. Update booking escrow state in database
-            const { error } = await supabaseAdmin
+            // 7. Retrieve the booking price from the database to prevent price exploitation
+            const { data: booking, error: fetchError } = await supabaseAdmin
+                .from("bookings")
+                .select("price")
+                .eq("id", bookingId)
+                .single();
+
+            if (fetchError || !booking) {
+                console.error(`❌ Webhook failed to retrieve booking ${bookingId} for validation:`, fetchError);
+                return new Response("Booking Not Found", { status: 404 });
+            }
+
+            const expectedAmountNaira = Number(booking.price);
+            if (amountNaira !== expectedAmountNaira) {
+                console.error(`⚠️ SECURITY ALERT: Price exploitation attempt! Booking: ${bookingId}. Paid: ₦${amountNaira}, Expected: ₦${expectedAmountNaira}`);
+                return new Response("Security Validation Failed: Price Mismatch", { status: 400 });
+            }
+
+            // 8. Update booking escrow state in database since payment matches exactly
+            const { error: updateError } = await supabaseAdmin
                 .from("bookings")
                 .update({ 
                     status: "paid",
@@ -74,8 +106,8 @@ serve(async (req) => {
                 })
                 .eq("id", bookingId);
 
-            if (error) {
-                console.error("❌ Failed to update booking status in database:", error);
+            if (updateError) {
+                console.error("❌ Failed to update booking status in database:", updateError);
                 return new Response("Database Update Error", { status: 500 });
             }
 

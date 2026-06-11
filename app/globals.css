@@ -1,0 +1,42 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@theme {
+  --color-forest: #1a6b3a;
+  --color-forest-light: #228b4a;
+  --color-gold: #d4a017;
+  --color-gold-light: #e8b82e;
+  --font-sans: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --font-display: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply min-h-screen bg-slate-50 font-sans text-slate-900 antialiased transition-colors duration-300;
+    @apply dark:bg-[hsl(220,18%,10%)] dark:text-slate-100;
+    background-image:
+      radial-gradient(circle at 10% 20%, rgba(26, 107, 58, 0.12) 0%, transparent 40%),
+      radial-gradient(circle at 90% 80%, rgba(212, 160, 23, 0.06) 0%, transparent 45%);
+    background-attachment: fixed;
+  }
+}
+
+@layer utilities {
+  .font-display {
+    font-family: var(--font-outfit), ui-sans-serif, system-ui, sans-serif;
+  }
+
+  .glass {
+    @apply rounded-2xl border border-slate-200/80 bg-white/70 shadow-xl shadow-slate-900/5 backdrop-blur-xl;
+    @apply dark:border-white/10 dark:bg-slate-900/60 dark:shadow-black/40;
+  }
+
+  .text-gradient-gold {
+    @apply bg-gradient-to-r from-gold to-gold-light bg-clip-text text-transparent;
+  }
+}
