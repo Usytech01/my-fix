@@ -29,7 +29,16 @@ Copy `.env.example` to `.env.local` and fill in your Supabase keys:
 ```bash
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your_anon_key
-SUPABASE_SERVICE_ROLE_KEY=your_service_role_key   # optional, for seed API
+SUPABASE_SERVICE_ROLE_KEY=your_service_role_key   # required by the seed API
+```
+
+To enable the one-click **Run Database Artisan Seed** button (Supabase tab),
+also set a matching admin token pair — the `/api/seed` route is admin-gated
+and refuses requests without it:
+
+```bash
+ADMIN_SEED_TOKEN=<any long random string>            # server-side check
+NEXT_PUBLIC_ADMIN_SEED_TOKEN=<same value as above>   # sent from the browser
 ```
 
 ### 3. Run the frontend
@@ -47,7 +56,8 @@ In the Supabase SQL Editor, run:
 - `supabase/migrations/20260525000000_init.sql`
 - `supabase/migrations/20260525000001_backend_fixes.sql`
 
-Or seed artisans from the **Supabase** tab in the app (requires env keys).
+Or seed artisans from the **Supabase** tab in the app (requires the
+`SUPABASE_SERVICE_ROLE_KEY` and matching `*_ADMIN_SEED_TOKEN` env vars above).
 
 ---
 

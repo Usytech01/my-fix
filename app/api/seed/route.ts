@@ -1,7 +1,33 @@
 import { NextResponse } from "next/server";
 import { LAGOS_ARTISANS } from "@/lib/constants";
 
-export async function POST() {
+/**
+ * Guards the seed endpoint. This route inserts artisans with the service-role
+ * key (bypassing RLS), so it must not be reachable by arbitrary callers. Set
+ * ADMIN_SEED_TOKEN in .env.local; requests must echo it back via either:
+ *   - header `x-admin-token: <token>`   (preferred)
+ *   - header `Authorization: Bearer <token>`
+ */
+function requireAdminToken(req: Request): boolean {
+  const expected = process.env.ADMIN_SEED_TOKEN;
+  if (!expected) return false; // refuse unless a token is configured
+  const headerVal =
+    req.headers.get("x-admin-token") ??
+    req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
+  return !!headerVal && headerVal === expected;
+}
+
+export async function POST(req: Request) {
+  if (!requireAdminToken(req)) {
+    return NextResponse.json(
+      {
+        error:
+          "Unauthorized. Set ADMIN_SEED_TOKEN and send it via the x-admin-token header.",
+      },
+      { status: 403 }
+    );
+  }
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key =
     process.env.SUPABASE_SERVICE_ROLE_KEY ??

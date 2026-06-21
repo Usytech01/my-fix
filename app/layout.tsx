@@ -29,6 +29,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <body
         className={`${inter.variable} ${outfit.variable} font-sans antialiased`}
+        suppressHydrationWarning
       >
         <ThemeProvider>
           <AuthProvider>{children}</AuthProvider>

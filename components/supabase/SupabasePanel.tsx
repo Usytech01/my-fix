@@ -8,6 +8,7 @@ import {
   Network,
   Sprout,
   Shield,
+  ShieldAlert,
   Table2,
 } from "lucide-react";
 
@@ -21,6 +22,7 @@ const TABLES = [
 export function SupabasePanel() {
   const { seeding, runSeed } = useApp();
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "Not configured";
+  const adminTokenSet = Boolean(process.env.NEXT_PUBLIC_ADMIN_SEED_TOKEN);
 
   return (
     <div>
@@ -85,6 +87,22 @@ export function SupabasePanel() {
             Populate remote tables with Lagos artisan seed data and PostGIS
             coordinates.
           </p>
+          {!adminTokenSet && (
+            <div className="flex gap-3 rounded-xl border border-amber-500/30 bg-amber-500/5 p-3">
+              <ShieldAlert className="h-4 w-4 shrink-0 text-amber-500" />
+              <p className="text-xs text-slate-500 leading-relaxed">
+                Seeding is admin-gated. Set{" "}
+                <code className="rounded bg-amber-500/10 px-1 py-0.5 font-mono text-amber-600 dark:text-amber-500">
+                  ADMIN_SEED_TOKEN
+                </code>{" "}
+                (server) and{" "}
+                <code className="rounded bg-amber-500/10 px-1 py-0.5 font-mono text-amber-600 dark:text-amber-500">
+                  NEXT_PUBLIC_ADMIN_SEED_TOKEN
+                </code>{" "}
+                in <code>.env.local</code> to enable.
+              </p>
+            </div>
+          )}
           <button
             type="button"
             disabled={seeding}

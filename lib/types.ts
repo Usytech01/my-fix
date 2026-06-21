@@ -12,6 +12,21 @@ export interface Profile {
 
 export type VerificationBadge = "bronze" | "silver" | "gold";
 
+/**
+ * Frontend lifecycle of an escrow booking as presented in the portal UI.
+ *
+ * NOTE: this is intentionally a UI-oriented superset and does NOT match the
+ * `booking_status` Postgres enum 1:1. The database stores `released` on the
+ * separate `escrow_status` column, not on `booking_status`. When persisting a
+ * booking, map `released`/`disputed` to the correct column + enum value:
+ *
+ *   DB bookings.status       -> ('pending','accepted','rejected','paid',
+ *                                'in_progress','completed','disputed','cancelled')
+ *   DB bookings.escrow_status -> ('held','released','disputed','refunded')
+ *
+ *   UI "released"  => bookings.status = 'completed', escrow_status = 'released'
+ *   UI "disputed"  => bookings.status = 'disputed',  escrow_status = 'disputed'
+ */
 export type BookingStatus =
   | "pending"
   | "paid"

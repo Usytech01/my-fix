@@ -267,7 +267,15 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setSeeding(true);
     appendAuditLog("blue", "[SUPABASE] Connecting to REST API endpoint...");
     try {
-      const res = await fetch("/api/seed", { method: "POST" });
+      // The seed route is admin-gated. The token is exposed to the browser via
+      // NEXT_PUBLIC_ADMIN_SEED_TOKEN — its purpose is to keep the endpoint from
+      // being an open mass-insert backdoor in deployed environments, not to be
+      // a high-security secret.
+      const adminToken = process.env.NEXT_PUBLIC_ADMIN_SEED_TOKEN;
+      const res = await fetch("/api/seed", {
+        method: "POST",
+        headers: adminToken ? { "x-admin-token": adminToken } : undefined,
+      });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error ?? "Seed failed");
       appendAuditLog(

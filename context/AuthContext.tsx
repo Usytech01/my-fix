@@ -4,6 +4,7 @@ import {
   createContext,
   useContext,
   useEffect,
+  useMemo,
   useState,
   type ReactNode,
 } from "react";
@@ -36,7 +37,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
   const [bypassMode, setBypassMode] = useState(false);
 
-  const supabase = getSupabaseClient();
+  // Client is a cached singleton; memoize the reference so it's stable across renders.
+  const supabase = useMemo(() => getSupabaseClient(), []);
 
   // Helper to fetch profile from DB with retries (for signup trigger latency)
   const fetchProfile = async (userId: string, retries = 5): Promise<Profile | null> => {

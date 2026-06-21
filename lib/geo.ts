@@ -16,5 +16,8 @@ export function haversineKm(
 }
 
 export function formatNaira(amount: number): string {
-  return `₦${amount.toLocaleString("en-NG")}.00`;
+  return `₦${amount.toLocaleString("en-NG", {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  })}`;
 }

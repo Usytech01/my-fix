@@ -10,6 +10,28 @@ const PAYSTACK_SECRET_KEY = Deno.env.get("PAYSTACK_SECRET_KEY") ?? "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") ?? "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 
+// Decode a hex string into a byte array. Returns an empty array on malformed input.
+function hexToBytes(hex: string): Uint8Array {
+    if (hex.length % 2 !== 0) return new Uint8Array();
+    const out = new Uint8Array(hex.length / 2);
+    for (let i = 0; i < out.length; i++) {
+        const byte = parseInt(hex.slice(i * 2, i * 2 + 2), 16);
+        if (Number.isNaN(byte)) return new Uint8Array();
+        out[i] = byte;
+    }
+    return out;
+}
+
+// Constant-time equality for two byte arrays (lengths must also match).
+function constantTimeEqual(a: Uint8Array, b: Uint8Array): boolean {
+    if (a.length !== b.length || a.length === 0) return false;
+    let diff = 0;
+    for (let i = 0; i < a.length; i++) {
+        diff |= a[i] ^ b[i];
+    }
+    return diff === 0;
+}
+
 serve(async (req) => {
     // 1. Only allow POST requests
     if (req.method !== "POST") {
@@ -44,11 +66,12 @@ serve(async (req) => {
             bodyBuf
         );
 
-        const expectedSignature = Array.from(new Uint8Array(signatureBuf))
-            .map(b => b.toString(16).padStart(2, "0"))
-            .join("");
+        // Decode the incoming hex signature into bytes for a timing-safe comparison.
+        // A naive string !== leaks signature bytes via response timing.
+        const expectedBytes = new Uint8Array(signatureBuf);
+        const receivedBytes = hexToBytes(signature);
 
-        if (signature !== expectedSignature) {
+        if (!constantTimeEqual(receivedBytes, expectedBytes)) {
             console.error("⚠️ HMAC Signature verification failed!");
             return new Response("Unauthorized", { status: 401 });
         }
@@ -79,10 +102,10 @@ serve(async (req) => {
             // Initialize high-privilege Supabase client (bypasses RLS to update escrow records)
             const supabaseAdmin = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-            // 7. Retrieve the booking price from the database to prevent price exploitation
+            // 7. Retrieve the booking price (and current status) from the database to prevent price exploitation
             const { data: booking, error: fetchError } = await supabaseAdmin
                 .from("bookings")
-                .select("price")
+                .select("price, status")
                 .eq("id", bookingId)
                 .single();
 
@@ -91,20 +114,34 @@ serve(async (req) => {
                 return new Response("Booking Not Found", { status: 404 });
             }
 
-            const expectedAmountNaira = Number(booking.price);
-            if (amountNaira !== expectedAmountNaira) {
-                console.error(`⚠️ SECURITY ALERT: Price exploitation attempt! Booking: ${bookingId}. Paid: ₦${amountNaira}, Expected: ₦${expectedAmountNaira}`);
+            // Idempotency guard: Paystack may retry this webhook. If the booking is already
+            // past 'pending', the payment was already processed — acknowledge and exit.
+            if (booking.status && booking.status !== "pending") {
+                console.log(`↪️ Booking ${bookingId} already in '${booking.status}' state. Treating webhook as duplicate.`);
+                return new Response(JSON.stringify({ received: true, duplicate: true }), {
+                    headers: { "Content-Type": "application/json" },
+                    status: 200,
+                });
+            }
+
+            // Compare in integer kobo to avoid floating-point inequality surprises.
+            // Paystack's `amount` is already kobo; convert the DB price (naira, numeric) to kobo.
+            const expectedKobo = Math.round(Number(booking.price) * 100);
+            if (amountKobo !== expectedKobo) {
+                console.error(`⚠️ SECURITY ALERT: Price exploitation attempt! Booking: ${bookingId}. Paid: ₦${amountNaira} (${amountKobo} kobo), Expected: ${expectedKobo} kobo`);
                 return new Response("Security Validation Failed: Price Mismatch", { status: 400 });
             }
 
-            // 8. Update booking escrow state in database since payment matches exactly
+            // 8. Update booking escrow state in database since payment matches exactly.
+            //    The `status = 'pending'` filter also protects against concurrent webhooks.
             const { error: updateError } = await supabaseAdmin
                 .from("bookings")
                 .update({ 
                     status: "paid",
                     escrow_status: "held"
                 })
-                .eq("id", bookingId);
+                .eq("id", bookingId)
+                .eq("status", "pending");
 
             if (updateError) {
                 console.error("❌ Failed to update booking status in database:", updateError);
@@ -121,7 +158,8 @@ serve(async (req) => {
         });
 
     } catch (err) {
-        console.error("❌ Webhook processing crashed:", err);
-        return new Response(`Server Error: ${err.message}`, { status: 500 });
+        const message = err instanceof Error ? err.message : String(err);
+        console.error("❌ Webhook processing crashed:", message);
+        return new Response(`Server Error: ${message}`, { status: 500 });
     }
 });

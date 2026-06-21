@@ -1,4 +1,4 @@
-import { createClient } from "@supabase/supabase-js";
+import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Artisan } from "./types";
 
 const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL ?? "";
@@ -7,9 +7,17 @@ const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY ?? "";
 export const supabaseConfigured =
   Boolean(supabaseUrl) && Boolean(supabaseAnonKey);
 
-export function getSupabaseClient() {
+// Cache a single client instance. Supabase maintains an auth state socket and
+// internal state, so creating a new client per call leaks listeners and breaks
+// `onAuthStateChange` subscription continuity.
+let cachedClient: SupabaseClient | null = null;
+
+export function getSupabaseClient(): SupabaseClient | null {
   if (!supabaseConfigured) return null;
-  return createClient(supabaseUrl, supabaseAnonKey);
+  if (!cachedClient) {
+    cachedClient = createClient(supabaseUrl, supabaseAnonKey);
+  }
+  return cachedClient;
 }
 
 export async function fetchNearbyArtisans(
