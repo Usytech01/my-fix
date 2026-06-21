@@ -1,4 +1,4 @@
-export type TabId = "discovery" | "onboarding" | "escrow" | "supabase";
+export type TabId = "discovery" | "onboarding" | "escrow" | "supabase" | "bookings" | "portfolio";
 
 export interface Profile {
   id: string;
@@ -9,8 +9,22 @@ export interface Profile {
   role: "client" | "artisan" | "admin";
 }
 
-
 export type VerificationBadge = "bronze" | "silver" | "gold";
+
+export interface Booking {
+  id: string;
+  client_id: string;
+  artisan_id: string;
+  status: BookingStatus;
+  escrow_status: "held" | "released" | "disputed" | "refunded";
+  job_description: string;
+  price: number;
+  scheduled_at: string;
+  created_at: string;
+  client?: { full_name: string; avatar_url: string; phone_number: string };
+  artisan?: { full_name: string; avatar_url: string; phone_number: string };
+}
+
 
 /**
  * Frontend lifecycle of an escrow booking as presented in the portal UI.
@@ -29,8 +43,12 @@ export type VerificationBadge = "bronze" | "silver" | "gold";
  */
 export type BookingStatus =
   | "pending"
+  | "accepted"
+  | "rejected"
   | "paid"
+  | "in_progress"
   | "completed"
+  | "cancelled"
   | "released"
   | "disputed";
 
@@ -72,6 +90,7 @@ export interface Neighborhood {
 }
 
 export interface EscrowBooking {
+  bookingId?: string;
   artisan: Artisan;
   calloutFee: number;
   serviceFee: number;

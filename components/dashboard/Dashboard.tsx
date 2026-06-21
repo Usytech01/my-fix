@@ -6,6 +6,8 @@ import { Header } from "@/components/layout/Header";
 import { Sidebar } from "@/components/layout/Sidebar";
 import { OnboardingPanel } from "@/components/onboarding/OnboardingPanel";
 import { SupabasePanel } from "@/components/supabase/SupabasePanel";
+import { BookingsPanel } from "@/components/bookings/BookingsPanel";
+import { PortfolioPanel } from "@/components/portfolio/PortfolioPanel";
 import { useApp } from "@/context/AppContext";
 
 export function Dashboard() {
@@ -21,6 +23,8 @@ export function Dashboard() {
           {activeTab === "onboarding" && <OnboardingPanel />}
           {activeTab === "escrow" && <EscrowPanel />}
           {activeTab === "supabase" && <SupabasePanel />}
+          {activeTab === "bookings" && <BookingsPanel />}
+          {activeTab === "portfolio" && <PortfolioPanel />}
         </section>
       </div>
     </div>

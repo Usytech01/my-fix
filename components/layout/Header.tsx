@@ -17,6 +17,8 @@ import { useTheme } from "next-themes";
 
 const TABS: { id: TabId; label: string; icon: typeof MapPin }[] = [
   { id: "discovery", label: "Discovery", icon: MapPin },
+  { id: "bookings", label: "Bookings", icon: Wallet },
+  { id: "portfolio", label: "Portfolio", icon: Database },
   { id: "onboarding", label: "Onboarding", icon: UserCheck },
   { id: "escrow", label: "Escrow", icon: Wallet },
   { id: "supabase", label: "Supabase", icon: Database },

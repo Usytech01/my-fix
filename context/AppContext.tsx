@@ -15,7 +15,7 @@ import {
   SERVICE_FEE_ESTIMATE,
 } from "@/lib/constants";
 import { haversineKm } from "@/lib/geo";
-import { fetchNearbyArtisans } from "@/lib/supabase";
+import { fetchNearbyArtisans, createBooking, updateBookingStatus } from "@/lib/supabase";
 import type {
   Artisan,
   AuditLogEntry,
@@ -74,6 +74,7 @@ function buildEscrowFromArtisan(artisan: Artisan): EscrowBooking {
   const serviceFee = SERVICE_FEE_ESTIMATE;
   const total = calloutFee + serviceFee;
   return {
+    bookingId: undefined,
     artisan,
     calloutFee,
     serviceFee,
@@ -176,13 +177,40 @@ export function AppProvider({ children }: { children: ReactNode }) {
   }, [filterBadge, filterTrade, neighborhood.lat, neighborhood.lng]);
 
   const selectArtisanForBooking = useCallback(
-    (artisan: Artisan) => {
-      setEscrow(buildEscrowFromArtisan(artisan));
+    async (artisan: Artisan) => {
+      let bookingId: string | undefined;
+      
+      // If user is logged in, create a real booking in Supabase
+      const sessionStr = localStorage.getItem("myfix_demo_session");
+      if (sessionStr) {
+        try {
+          const { user } = JSON.parse(sessionStr);
+          if (user && user.id) {
+            const res = await createBooking(
+              user.id,
+              artisan.id,
+              `Booking for ${artisan.trade_category.join(", ")} services.`,
+              artisan.base_callout_fee + SERVICE_FEE_ESTIMATE,
+              new Date(Date.now() + 86400000).toISOString() // schedule for tomorrow
+            );
+            if ('data' in res && res.data) {
+              bookingId = res.data.id;
+            }
+          }
+        } catch(e) {
+          console.error("Failed to parse user for booking", e);
+        }
+      }
+
+      setEscrow({ ...buildEscrowFromArtisan(artisan), bookingId });
       setActiveTab("escrow");
       appendAuditLog(
         "blue",
         `[SYSTEM] Prepared booking with ${artisan.full_name}. Price agreed: ₦${artisan.base_callout_fee + SERVICE_FEE_ESTIMATE}`
       );
+      if (bookingId) {
+        appendAuditLog("green-success", `[SUPABASE] Created Booking ID: ${bookingId.split('-')[0]}...`);
+      }
     },
     [appendAuditLog]
   );
@@ -253,6 +281,11 @@ export function AppProvider({ children }: { children: ReactNode }) {
           "💾 booking status = 'paid', escrow_status = 'held'"
         );
         advanceEscrowStatus("paid");
+        
+        // Update real booking if exists
+        if (escrow.bookingId) {
+          updateBookingStatus(escrow.bookingId, "paid", "held").catch(console.error);
+        }
       }
     }, 1500);
   }, [appendAuditLog, advanceEscrowStatus, escrow.paymentAmount, escrow.total]);
