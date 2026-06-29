@@ -26,7 +26,7 @@ interface AuthContextValue {
     role: "client" | "artisan"
   ) => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
-  enableBypassMode: (demoRole?: "client" | "artisan") => void;
+  enableBypassMode: (demoRole?: "client" | "artisan" | "admin") => void;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -122,9 +122,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!supabaseConfigured || !supabase) {
       // Simulated sign in
       const mockUserId = "demo-user-id-12345";
-      const isArtisanEmail = email.includes("artisan") || email.includes("emeka");
-      const role = isArtisanEmail ? "artisan" : "client";
-      const fullName = isArtisanEmail ? "Emeka Anthony Nwosu (Demo)" : "Chidinma Lekki (Demo)";
+      const isAdminEmail = email.toLowerCase().includes("admin") || email.toLowerCase() === "usmandio2@gmail.com";
+      const isArtisanEmail = email.toLowerCase().includes("artisan") || email.toLowerCase().includes("emeka");
+      const role = isAdminEmail ? "admin" : isArtisanEmail ? "artisan" : "client";
+      const fullName = isAdminEmail 
+        ? "Admin User (Demo)" 
+        : isArtisanEmail 
+          ? "Emeka Anthony Nwosu (Demo)" 
+          : "Chidinma Lekki (Demo)";
 
       const mockUser = {
         id: mockUserId,
@@ -235,17 +240,17 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     localStorage.removeItem("myfix_demo_session");
   };
 
-  const enableBypassMode = (demoRole: "client" | "artisan" = "client") => {
+  const enableBypassMode = (demoRole: "client" | "artisan" | "admin" = "client") => {
     const mockUserId = "demo-bypass-id-67890";
     const mockUser = {
       id: mockUserId,
-      email: demoRole === "artisan" ? "emeka@myfix.ng" : "chidinma@myfix.ng",
+      email: demoRole === "admin" ? "admin@myfix.ng" : demoRole === "artisan" ? "emeka@myfix.ng" : "chidinma@myfix.ng",
       phone: "+2348145558839",
     } as User;
 
     const mockProfile: Profile = {
       id: mockUserId,
-      full_name: demoRole === "artisan" ? "Emeka Anthony Nwosu (Demo)" : "Chidinma Lekki (Demo)",
+      full_name: demoRole === "admin" ? "Admin User (Demo)" : demoRole === "artisan" ? "Emeka Anthony Nwosu (Demo)" : "Chidinma Lekki (Demo)",
       email: mockUser.email,
       role: demoRole,
       phone_number: "+2348145558839",

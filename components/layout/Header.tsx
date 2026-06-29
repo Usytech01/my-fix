@@ -29,6 +29,20 @@ export function Header() {
   const { theme, setTheme } = useTheme();
   const { profile, signOut } = useAuth();
 
+  const filteredTabs = TABS.filter(({ id }) => {
+    if (!profile) return false;
+    if (profile.role === "client") {
+      return ["discovery", "bookings", "escrow"].includes(id);
+    }
+    if (profile.role === "artisan") {
+      return ["onboarding", "bookings", "portfolio"].includes(id);
+    }
+    if (profile.role === "admin") {
+      return ["supabase", "bookings", "escrow"].includes(id);
+    }
+    return false;
+  });
+
   const initials = profile?.full_name
     ? profile.full_name
         .split(" ")
@@ -53,7 +67,7 @@ export function Header() {
       </div>
 
       <nav className="flex flex-wrap gap-2">
-        {TABS.map(({ id, label, icon: Icon }) => (
+        {filteredTabs.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
             type="button"

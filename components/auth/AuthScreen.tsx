@@ -108,6 +108,14 @@ export function AuthScreen() {
                     Demo Artisan
                     <ArrowRight className="h-3 w-3" />
                   </button>
+                  <button
+                    type="button"
+                    onClick={() => enableBypassMode("admin")}
+                    className="flex items-center gap-1 rounded-lg bg-red-500/10 px-3 py-1.5 text-xs font-semibold text-red-500 hover:bg-red-500/20 dark:text-red-400 dark:bg-red-500/20"
+                  >
+                    Demo Admin
+                    <ArrowRight className="h-3 w-3" />
+                  </button>
                 </div>
               </div>
             </div>

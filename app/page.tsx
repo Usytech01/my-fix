@@ -1,32 +1,31 @@
 "use client";
 
-import { Dashboard } from "@/components/dashboard/Dashboard";
-import { AppProvider } from "@/context/AppContext";
 import { useAuth } from "@/context/AuthContext";
 import { AuthScreen } from "@/components/auth/AuthScreen";
 import { Loader2 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
 function MainContent() {
-  const { user, loading } = useAuth();
+  const { user, profile, loading } = useAuth();
+  const router = useRouter();
 
-  if (loading) {
+  useEffect(() => {
+    if (!loading && user && profile) {
+      router.replace(`/${profile.role}`);
+    }
+  }, [user, profile, loading, router]);
+
+  if (loading || (user && profile)) {
     return (
       <div className="flex min-h-screen flex-col items-center justify-center gap-3">
         <Loader2 className="h-12 w-12 animate-spin text-gold" />
-        <p className="text-sm font-semibold text-slate-500 font-display">Initializing My_Fix Portal...</p>
+        <p className="text-sm font-semibold text-slate-500 font-display">Redirecting to dashboard...</p>
       </div>
     );
   }
 
-  if (!user) {
-    return <AuthScreen />;
-  }
-
-  return (
-    <AppProvider>
-      <Dashboard />
-    </AppProvider>
-  );
+  return <AuthScreen />;
 }
 
 export default function Home() {
