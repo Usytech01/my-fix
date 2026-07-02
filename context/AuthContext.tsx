@@ -25,6 +25,7 @@ interface AuthContextValue {
     fullName: string,
     role: "client" | "artisan"
   ) => Promise<{ error: string | null }>;
+  signInWithGoogle: (role: "client" | "artisan") => Promise<{ error: string | null }>;
   signOut: () => Promise<void>;
   enableBypassMode: (demoRole?: "client" | "artisan" | "admin") => void;
 }
@@ -63,6 +64,36 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return null;
   };
 
+  // Helper to sync user profile and check for pending OAuth role upgrades
+  const syncProfileAndRole = async (sessionUser: User): Promise<Profile | null> => {
+    if (!supabase) return null;
+    
+    let userProfile = await fetchProfile(sessionUser.id);
+    
+    // Check if there's a pending role from OAuth registration
+    const pendingRole = localStorage.getItem("myfix_pending_role");
+    if (pendingRole && (pendingRole === "client" || pendingRole === "artisan")) {
+      localStorage.removeItem("myfix_pending_role");
+      
+      // If the profile exists but the database role is different (e.g. defaulted to client)
+      if (userProfile && userProfile.role !== pendingRole) {
+        const { error: updateError } = await supabase
+          .from("profiles")
+          .update({ role: pendingRole })
+          .eq("id", sessionUser.id);
+          
+        if (!updateError) {
+          // Re-fetch the updated profile
+          userProfile = await fetchProfile(sessionUser.id);
+        } else {
+          console.error("Failed to update profile role:", updateError);
+        }
+      }
+    }
+    
+    return userProfile;
+  };
+
   useEffect(() => {
     if (!supabaseConfigured || !supabase) {
       // Check if bypass mode session exists in localStorage
@@ -87,7 +118,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         const { data: { session } } = await supabase.auth.getSession();
         if (session?.user) {
           setUser(session.user);
-          const userProfile = await fetchProfile(session.user.id);
+          const userProfile = await syncProfileAndRole(session.user);
           setProfile(userProfile);
         }
       } catch (err) {
@@ -103,7 +134,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       async (event, session) => {
         if (session?.user) {
           setUser(session.user);
-          const userProfile = await fetchProfile(session.user.id);
+          const userProfile = await syncProfileAndRole(session.user);
           setProfile(userProfile);
         } else {
           setUser(null);
@@ -230,6 +261,53 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
   };
 
+  const signInWithGoogle = async (role: "client" | "artisan") => {
+    if (!supabaseConfigured || !supabase) {
+      // Simulated sign in
+      const mockUserId = "demo-google-user-id";
+      const fullName = role === "artisan" ? "Google Artisan (Demo)" : "Google Client (Demo)";
+      const email = role === "artisan" ? "google_artisan@demo.com" : "google_client@demo.com";
+
+      const mockUser = {
+        id: mockUserId,
+        email,
+        phone: "+2348145558839",
+      } as User;
+
+      const mockProfile: Profile = {
+        id: mockUserId,
+        full_name: fullName,
+        email,
+        role,
+        phone_number: "+2348145558839",
+      };
+
+      setUser(mockUser);
+      setProfile(mockProfile);
+      setBypassMode(true);
+      localStorage.setItem(
+        "myfix_demo_session",
+        JSON.stringify({ user: mockUser, profile: mockProfile })
+      );
+      return { error: null };
+    }
+
+    try {
+      localStorage.setItem("myfix_pending_role", role);
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: "google",
+        options: {
+          redirectTo: window.location.origin,
+        },
+      });
+
+      if (error) return { error: error.message };
+      return { error: null };
+    } catch (err) {
+      return { error: err instanceof Error ? err.message : "An unexpected Google auth error occurred" };
+    }
+  };
+
   const signOut = async () => {
     if (supabaseConfigured && supabase) {
       await supabase.auth.signOut();
@@ -275,6 +353,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         bypassMode,
         signIn,
         signUp,
+        signInWithGoogle,
         signOut,
         enableBypassMode,
       }}

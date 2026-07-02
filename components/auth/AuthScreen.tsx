@@ -18,6 +18,7 @@ export function AuthScreen() {
   const {
     signIn,
     signUp,
+    signInWithGoogle,
     supabaseConfigured,
     enableBypassMode,
   } = useAuth();
@@ -53,6 +54,22 @@ export function AuthScreen() {
     } catch (err) {
       setError("An unexpected error occurred. Please try again.");
     } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setError(null);
+    setLoading(true);
+
+    try {
+      const res = await signInWithGoogle(role);
+      if (res?.error) {
+        setError(res.error);
+        setLoading(false);
+      }
+    } catch (err) {
+      setError("An unexpected error occurred during Google Sign In. Please try again.");
       setLoading(false);
     }
   };
@@ -283,6 +300,33 @@ export function AuthScreen() {
                 ) : (
                   "Create Account"
                 )}
+              </button>
+
+              {/* Divider */}
+              <div className="flex items-center gap-3 my-5">
+                <div className="h-[1px] flex-1 bg-slate-200 dark:bg-white/10"></div>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-slate-400 dark:text-slate-500 shrink-0">
+                  Or continue with
+                </span>
+                <div className="h-[1px] flex-1 bg-slate-200 dark:bg-white/10"></div>
+              </div>
+
+              {/* Google OAuth Button */}
+              <button
+                type="button"
+                onClick={handleGoogleSignIn}
+                disabled={loading}
+                className="flex w-full items-center justify-center gap-3 rounded-xl border border-slate-200 dark:border-white/10 bg-white/50 dark:bg-slate-800/30 py-3.5 text-sm font-semibold text-slate-700 dark:text-slate-200 transition hover:bg-slate-100/50 dark:hover:bg-slate-800/50 hover:border-slate-300 dark:hover:border-white/20 active:scale-[0.98] disabled:opacity-60 cursor-pointer"
+              >
+                <svg className="h-5 w-5 shrink-0" viewBox="0 0 24 24" width="24" height="24" xmlns="http://www.w3.org/2000/svg">
+                  <g transform="matrix(1, 0, 0, 1, 0, 0)">
+                    <path d="M21.35,11.1H12v2.7h5.38c-0.24,1.28 -0.96,2.37 -2.04,3.1v2.58h3.3c1.93,-1.78 3.04,-4.4 3.04,-7.48c0,-0.61 -0.06,-1.2 -0.17,-1.76z" fill="#4285F4" />
+                    <path d="M12,20.7c2.35,0 4.32,-0.78 5.76,-2.12l-3.3,-2.58c-0.91,0.61 -2.08,0.98 -3.3,0.98c-2.28,0 -4.21,-1.54 -4.9,-3.61H2.88v2.66c1.44,2.87 4.41,4.67 7.74,4.67z" fill="#34A853" />
+                    <path d="M7.1,13.37c-0.17,-0.52 -0.27,-1.08 -0.27,-1.65c0,-0.57 0.1,-1.13 0.27,-1.65V7.41H2.88c-0.58,1.16 -0.91,2.47 -0.91,3.87c0,1.4 0.33,2.71 0.91,3.87l4.22,-3.28z" fill="#FBBC05" />
+                    <path d="M12,6.72c1.28,0 2.43,0.44 3.34,1.3l2.5,-2.5C16.31,4.12 14.34,3.3 12,3.3c-3.33,0 -6.3,1.8 -7.74,4.67l4.22,3.28c0.69,-2.07 2.62,-3.61 4.9,-3.61z" fill="#EA4335" />
+                  </g>
+                </svg>
+                {isLogin ? "Sign in with Google" : "Sign up with Google"}
               </button>
 
             </form>
