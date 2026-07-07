@@ -149,3 +149,49 @@ export async function updateArtisanPortfolio(artisanId: string, urls: string[]) 
     .update({ portfolio_urls: urls })
     .eq("id", artisanId);
 }
+
+// ---------------------------------------------------------------------------
+// Onboarding Persistence Helpers
+// ---------------------------------------------------------------------------
+
+/** Fetch a single artisan's verification record. */
+export async function fetchArtisanDetails(artisanId: string) {
+  const client = getSupabaseClient();
+  if (!client) return { data: null, error: "Supabase not configured" };
+
+  return await client
+    .from("artisans")
+    .select("nin_verified, bvn_verified, background_checked, badge, trade_category, service_areas, portfolio_urls")
+    .eq("id", artisanId)
+    .maybeSingle();
+}
+
+/** Persist partial onboarding progress (nin_verified, bvn_verified, badge, etc.). */
+export async function updateArtisanVerification(
+  artisanId: string,
+  updates: {
+    nin_verified?: boolean;
+    bvn_verified?: boolean;
+    background_checked?: boolean;
+    badge?: "bronze" | "silver" | "gold";
+  }
+) {
+  const client = getSupabaseClient();
+  if (!client) return { error: "Supabase not configured" };
+
+  return await client
+    .from("artisans")
+    .update(updates)
+    .eq("id", artisanId);
+}
+
+/** Persist a verified phone number onto the profile row. */
+export async function updateProfilePhone(userId: string, phoneNumber: string) {
+  const client = getSupabaseClient();
+  if (!client) return { error: "Supabase not configured" };
+
+  return await client
+    .from("profiles")
+    .update({ phone_number: phoneNumber })
+    .eq("id", userId);
+}

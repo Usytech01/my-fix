@@ -24,6 +24,10 @@ export function OnboardingPanel() {
     nimcOffline,
     setNimcOffline,
     resetOnboarding,
+    savingStep,
+    savePhoneNumber,
+    saveNINVerified,
+    saveBVNVerified,
   } = useApp();
 
   const [ninProcessing, setNinProcessing] = useState(false);
@@ -119,10 +123,15 @@ export function OnboardingPanel() {
                 </div>
                 <button
                   type="button"
-                  onClick={() => goTo(2)}
+                  disabled={savingStep}
+                  onClick={async () => {
+                    // In the real wizard the phone value would come from the input.
+                    // We read the hard-coded demo value for now.
+                    await savePhoneNumber("+2348145558839");
+                  }}
                   className="rounded-xl bg-forest px-5 py-3 text-sm font-semibold text-white"
                 >
-                  Verify Code
+                  {savingStep ? "Saving..." : "Verify Code"}
                 </button>
               </div>
             )}
@@ -171,22 +180,23 @@ export function OnboardingPanel() {
                 />
                 <button
                   type="button"
-                  disabled={ninProcessing}
+                  disabled={ninProcessing || savingStep}
                   onClick={() => {
                     setNinProcessing(true);
-                    setTimeout(() => {
+                    setTimeout(async () => {
                       setNinProcessing(false);
                       if (nimcOffline) {
                         goTo(3);
                       } else {
                         setSelfieDone(true);
+                        await saveNINVerified();
                         setTimeout(() => goTo(3), 1200);
                       }
                     }, 2000);
                   }}
                   className="rounded-xl bg-forest px-5 py-3 text-sm font-semibold text-white disabled:opacity-60"
                 >
-                  {ninProcessing ? "Connecting to NIMC..." : "Process NIN & Live Selfie"}
+                  {ninProcessing ? "Connecting to NIMC..." : savingStep ? "Saving..." : "Process NIN & Live Selfie"}
                 </button>
               </div>
               <div
@@ -255,17 +265,18 @@ export function OnboardingPanel() {
             />
             <button
               type="button"
-              disabled={bvnProcessing}
+              disabled={bvnProcessing || savingStep}
               onClick={() => {
                 setBvnProcessing(true);
-                setTimeout(() => {
+                setTimeout(async () => {
                   setBvnProcessing(false);
+                  await saveBVNVerified();
                   goTo(4);
                 }, 1500);
               }}
               className="rounded-xl bg-forest px-5 py-3 text-sm font-semibold text-white"
             >
-              {bvnProcessing ? "Cross-referencing BVN..." : "Verify Payout Credentials"}
+              {bvnProcessing ? "Cross-referencing BVN..." : savingStep ? "Saving..." : "Verify Payout Credentials"}
             </button>
           </div>
         )}

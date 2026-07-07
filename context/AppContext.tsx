@@ -15,7 +15,7 @@ import {
   SERVICE_FEE_ESTIMATE,
 } from "@/lib/constants";
 import { haversineKm } from "@/lib/geo";
-import { fetchNearbyArtisans, createBooking, updateBookingStatus } from "@/lib/supabase";
+import { fetchNearbyArtisans, createBooking, updateBookingStatus, fetchArtisanDetails, updateArtisanVerification, updateProfilePhone } from "@/lib/supabase";
 import type {
   Artisan,
   AuditLogEntry,
@@ -63,8 +63,13 @@ interface AppContextValue {
   nimcOffline: boolean;
   setNimcOffline: (v: boolean) => void;
   resetOnboarding: () => void;
+  savingStep: boolean;
+  savePhoneNumber: (phone: string) => Promise<void>;
+  saveNINVerified: () => Promise<void>;
+  saveBVNVerified: () => Promise<void>;
   seeding: boolean;
   runSeed: () => Promise<void>;
+  loadOnboardingStateForArtisan: (userId: string, isBypass: boolean) => Promise<void>;
 }
 
 const AppContext = createContext<AppContextValue | null>(null);
@@ -113,6 +118,7 @@ export function AppProvider({ children }: { children: ReactNode }) {
   const [onboardingStep, setOnboardingStep] = useState(1);
   const [otpSent, setOtpSent] = useState(false);
   const [nimcOffline, setNimcOffline] = useState(false);
+  const [savingStep, setSavingStep] = useState(false);
   const [seeding, setSeeding] = useState(false);
 
   const neighborhood = useMemo(
@@ -296,6 +302,108 @@ export function AppProvider({ children }: { children: ReactNode }) {
     setNimcOffline(false);
   }, []);
 
+  // ---------------------------------------------------------------------------
+  // Onboarding Persistence
+  // ---------------------------------------------------------------------------
+
+  // Helper to read/write bypass-mode state for artisan onboarding
+  const BYPASS_KEY = "myfix_demo_artisan_onboarding";
+
+  const savePhoneNumber = useCallback(async (phone: string) => {
+    setSavingStep(true);
+    try {
+      const cached = localStorage.getItem("myfix_demo_session");
+      if (cached) {
+        // Bypass / demo mode — persist to localStorage only
+        const { user } = JSON.parse(cached);
+        if (user?.id) {
+          const prev = JSON.parse(localStorage.getItem(BYPASS_KEY) ?? "{}");
+          localStorage.setItem(BYPASS_KEY, JSON.stringify({ ...prev, phone, step: 2 }));
+          setOnboardingStep(2);
+          setOtpSent(true);
+        }
+      } else {
+        // Live Supabase mode
+        const sessionStr = typeof window !== "undefined" ? localStorage.getItem("myfix_demo_session") : null;
+        const supabaseSession = sessionStr ? null : true; // live path when no demo session
+        // Get user from supabase client
+        const { getSupabaseClient } = await import("@/lib/supabase");
+        const client = getSupabaseClient();
+        if (client) {
+          const { data: { session } } = await client.auth.getSession();
+          if (session?.user) {
+            await updateProfilePhone(session.user.id, phone);
+            setOnboardingStep(2);
+            setOtpSent(true);
+          }
+        }
+      }
+    } catch (e) {
+      console.error("savePhoneNumber error:", e);
+    } finally {
+      setSavingStep(false);
+    }
+  }, []);
+
+  const saveNINVerified = useCallback(async () => {
+    setSavingStep(true);
+    try {
+      const cached = localStorage.getItem("myfix_demo_session");
+      if (cached) {
+        const { user } = JSON.parse(cached);
+        if (user?.id) {
+          const prev = JSON.parse(localStorage.getItem(BYPASS_KEY) ?? "{}");
+          localStorage.setItem(BYPASS_KEY, JSON.stringify({ ...prev, nin_verified: true, step: 3 }));
+        }
+      } else {
+        const { getSupabaseClient } = await import("@/lib/supabase");
+        const client = getSupabaseClient();
+        if (client) {
+          const { data: { session } } = await client.auth.getSession();
+          if (session?.user) {
+            await updateArtisanVerification(session.user.id, { nin_verified: true });
+          }
+        }
+      }
+    } catch (e) {
+      console.error("saveNINVerified error:", e);
+    } finally {
+      setSavingStep(false);
+    }
+  }, []);
+
+  const saveBVNVerified = useCallback(async () => {
+    setSavingStep(true);
+    try {
+      const cached = localStorage.getItem("myfix_demo_session");
+      if (cached) {
+        const { user } = JSON.parse(cached);
+        if (user?.id) {
+          const prev = JSON.parse(localStorage.getItem(BYPASS_KEY) ?? "{}");
+          localStorage.setItem(BYPASS_KEY, JSON.stringify({ ...prev, bvn_verified: true, badge: "gold", step: 4 }));
+        }
+      } else {
+        const { getSupabaseClient } = await import("@/lib/supabase");
+        const client = getSupabaseClient();
+        if (client) {
+          const { data: { session } } = await client.auth.getSession();
+          if (session?.user) {
+            await updateArtisanVerification(session.user.id, {
+              bvn_verified: true,
+              background_checked: true,
+              badge: "gold",
+            });
+          }
+        }
+      }
+      await refreshArtisans();
+    } catch (e) {
+      console.error("saveBVNVerified error:", e);
+    } finally {
+      setSavingStep(false);
+    }
+  }, [refreshArtisans]);
+
   const runSeed = useCallback(async () => {
     setSeeding(true);
     appendAuditLog("blue", "[SUPABASE] Connecting to REST API endpoint...");
@@ -325,6 +433,62 @@ export function AppProvider({ children }: { children: ReactNode }) {
       setSeeding(false);
     }
   }, [appendAuditLog, refreshArtisans]);
+
+  // ---------------------------------------------------------------------------
+  // Load onboarding state from DB or localStorage when profile changes
+  // ---------------------------------------------------------------------------
+  // Expose a loadOnboardingState function that Dashboard or OnboardingPanel can call.
+  const loadOnboardingStateForArtisan = useCallback(async (userId: string, isBypass: boolean) => {
+    if (isBypass) {
+      const saved = localStorage.getItem("myfix_demo_artisan_onboarding");
+      if (saved) {
+        try {
+          const { step } = JSON.parse(saved);
+          if (typeof step === "number" && step >= 1 && step <= 4) {
+            setOnboardingStep(step);
+            if (step >= 2) setOtpSent(true);
+          }
+        } catch (e) {
+          // invalid data, ignore
+        }
+      }
+      return;
+    }
+
+    // Live mode: fetch from DB
+    try {
+      const { data } = await fetchArtisanDetails(userId);
+      if (data) {
+        const { nin_verified, bvn_verified } = data;
+        if (bvn_verified) {
+          setOnboardingStep(4);
+          setOtpSent(true);
+        } else if (nin_verified) {
+          setOnboardingStep(3);
+          setOtpSent(true);
+        } else {
+          // Check profile phone via supabase client
+          const { getSupabaseClient } = await import("@/lib/supabase");
+          const client = getSupabaseClient();
+          if (client) {
+            const { data: profileData } = await client
+              .from("profiles")
+              .select("phone_number")
+              .eq("id", userId)
+              .maybeSingle();
+            if (profileData?.phone_number) {
+              setOnboardingStep(2);
+              setOtpSent(true);
+            } else {
+              setOnboardingStep(1);
+            }
+          }
+        }
+      }
+    } catch (e) {
+      console.error("loadOnboardingStateForArtisan error:", e);
+    }
+  }, []);
 
   const value: AppContextValue = {
     activeTab,
@@ -363,8 +527,13 @@ export function AppProvider({ children }: { children: ReactNode }) {
     nimcOffline,
     setNimcOffline,
     resetOnboarding,
+    savingStep,
+    savePhoneNumber,
+    saveNINVerified,
+    saveBVNVerified,
     seeding,
     runSeed,
+    loadOnboardingStateForArtisan,
   };
 
   return <AppContext.Provider value={value}>{children}</AppContext.Provider>;

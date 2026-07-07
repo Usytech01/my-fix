@@ -13,9 +13,15 @@ import { useAuth } from "@/context/AuthContext";
 import { useEffect } from "react";
 
 export function Dashboard() {
-  const { activeTab, setActiveTab } = useApp();
-  const { profile } = useAuth();
+  const { activeTab, setActiveTab, loadOnboardingStateForArtisan } = useApp();
+  const { profile, bypassMode } = useAuth();
 
+  // Restore the artisan's onboarding progress from DB or localStorage on login
+  useEffect(() => {
+    if (profile?.role === "artisan") {
+      loadOnboardingStateForArtisan(profile.id, bypassMode);
+    }
+  }, [profile, bypassMode, loadOnboardingStateForArtisan]);
   useEffect(() => {
     if (profile) {
       if (profile.role === "client" && !["discovery", "bookings", "escrow"].includes(activeTab)) {

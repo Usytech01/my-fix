@@ -1,19 +1,50 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
-import { uploadPortfolioImage, updateArtisanPortfolio } from "@/lib/supabase";
+import { uploadPortfolioImage, updateArtisanPortfolio, fetchArtisanDetails } from "@/lib/supabase";
 import { Loader2, Upload, Trash2, Image as ImageIcon } from "lucide-react";
 
 export function PortfolioPanel() {
-  const { profile } = useAuth();
+  const { profile, bypassMode } = useAuth();
   const [urls, setUrls] = useState<string[]>([]);
-  // We can't fetch urls from profile unless profile includes it. Let's assume for now 
-  // it doesn't, but normally we'd fetch the artisan record. 
-  // For simplicity, we'll just allow adding new ones.
+  const [loadingGallery, setLoadingGallery] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  // Load existing portfolio images on mount
+  useEffect(() => {
+    if (!profile || profile.role !== "artisan") {
+      setLoadingGallery(false);
+      return;
+    }
+
+    async function loadGallery() {
+      setLoadingGallery(true);
+      try {
+        if (bypassMode) {
+          // In demo mode, restore from localStorage
+          const saved = localStorage.getItem(`myfix_portfolio_${profile!.id}`);
+          if (saved) {
+            setUrls(JSON.parse(saved));
+          }
+        } else {
+          // Live Supabase mode
+          const { data } = await fetchArtisanDetails(profile!.id);
+          if (data?.portfolio_urls && Array.isArray(data.portfolio_urls)) {
+            setUrls(data.portfolio_urls);
+          }
+        }
+      } catch (e) {
+        console.error("Failed to load portfolio:", e);
+      } finally {
+        setLoadingGallery(false);
+      }
+    }
+
+    loadGallery();
+  }, [profile, bypassMode]);
 
   if (!profile || profile.role !== "artisan") {
     return (
@@ -35,27 +66,39 @@ export function PortfolioPanel() {
     setUploading(true);
     setError(null);
 
-    const { data: url, error: uploadError } = await uploadPortfolioImage(profile.id, file);
+    if (bypassMode) {
+      // Demo mode: create an object URL as a placeholder
+      const objectUrl = URL.createObjectURL(file);
+      const newUrls = [...urls, objectUrl];
+      setUrls(newUrls);
+      localStorage.setItem(`myfix_portfolio_${profile!.id}`, JSON.stringify(newUrls));
+      setUploading(false);
+      return;
+    }
+
+    const { data: url, error: uploadError } = await uploadPortfolioImage(profile!.id, file);
 
     if (uploadError || !url) {
-      setError(typeof uploadError === 'string' ? uploadError : uploadError?.message || "Failed to upload image.");
+      setError(typeof uploadError === 'string' ? uploadError : (uploadError as any)?.message || "Failed to upload image.");
       setUploading(false);
       return;
     }
 
     const newUrls = [...urls, url];
     setUrls(newUrls);
-    
     // Save to DB
-    await updateArtisanPortfolio(profile.id, newUrls);
-
+    await updateArtisanPortfolio(profile!.id, newUrls);
     setUploading(false);
   };
 
   const removeImage = async (urlToRemove: string) => {
     const newUrls = urls.filter((u) => u !== urlToRemove);
     setUrls(newUrls);
-    await updateArtisanPortfolio(profile.id, newUrls);
+    if (bypassMode) {
+      localStorage.setItem(`myfix_portfolio_${profile!.id}`, JSON.stringify(newUrls));
+    } else {
+      await updateArtisanPortfolio(profile!.id, newUrls);
+    }
   };
 
   return (
@@ -81,7 +124,7 @@ export function PortfolioPanel() {
           />
           <button
             onClick={() => fileInputRef.current?.click()}
-            disabled={uploading}
+            disabled={uploading || loadingGallery}
             className="flex items-center gap-2 rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700 transition-colors disabled:opacity-50"
           >
             {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Upload className="h-4 w-4" />}
@@ -91,7 +134,12 @@ export function PortfolioPanel() {
 
         {error && <p className="text-sm text-red-500 mb-4">{error}</p>}
 
-        {urls.length === 0 ? (
+        {loadingGallery ? (
+          <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 py-16">
+            <Loader2 className="h-8 w-8 animate-spin text-slate-400" />
+            <p className="mt-3 text-sm text-slate-500">Loading your portfolio...</p>
+          </div>
+        ) : urls.length === 0 ? (
           <div className="flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-slate-200 py-16 text-center">
             <div className="mb-3 rounded-full bg-slate-50 p-3 text-slate-400">
               <ImageIcon className="h-8 w-8" />
